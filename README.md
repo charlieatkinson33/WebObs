@@ -9,7 +9,7 @@ WebObs is a web-based virtual observations machine that simulates a medical pati
 ## Features
 
 - **Three-page interface**: Landing page, Control panel, and Display monitor
-- **🌐 Internet Session Support**: Connect control and display across different networks using session IDs
+- **Internet Session Support**: Connect control and display across different networks using session IDs
 - **Peer-to-Peer Communication**: Uses WebRTC for real-time data transmission
 - **Professional Monitor Display**: Display looks like an actual OBS patient monitor with glowing indicators
 - **Comprehensive vitals monitoring**: Heart rate, SpO2, blood pressure, temperature, respiratory rate
