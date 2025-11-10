@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Display - WebObs</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="display-page">
+            <div class="header">
+                <a href="index.html" class="back-btn">← Back</a>
+                <h1>Patient Monitor</h1>
+                <div class="audio-controls">
+                    <button id="toggleAudio" class="audio-btn">
+                        <span id="audioIcon">🔊</span>
+                        <span id="audioText">Sounds On</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="vitals-display">
+                <div class="vital-card vital-hr">
+                    <div class="vital-label">Heart Rate</div>
+                    <div class="vital-value" id="hrValue">--</div>
+                    <div class="vital-unit">BPM</div>
+                    <div class="vital-waveform" id="hrWaveform"></div>
+                </div>
+                
+                <div class="vital-card vital-spo2">
+                    <div class="vital-label">SpO2</div>
+                    <div class="vital-value" id="spo2Value">--</div>
+                    <div class="vital-unit">%</div>
+                    <div class="vital-waveform" id="spo2Waveform"></div>
+                </div>
+                
+                <div class="vital-card vital-bp">
+                    <div class="vital-label">Blood Pressure</div>
+                    <div class="vital-value" id="bpValue">--/--</div>
+                    <div class="vital-unit">mmHg</div>
+                </div>
+                
+                <div class="vital-card vital-temp">
+                    <div class="vital-label">Temperature</div>
+                    <div class="vital-value" id="tempValue">--</div>
+                    <div class="vital-unit">°C</div>
+                </div>
+                
+                <div class="vital-card vital-rr">
+                    <div class="vital-label">Respiratory Rate</div>
+                    <div class="vital-value" id="rrValue">--</div>
+                    <div class="vital-unit">breaths/min</div>
+                </div>
+            </div>
+            
+            <div class="observations-section">
+                <h2>Observations</h2>
+                <div class="observations-content" id="observationsContent">
+                    <p class="no-data">No observations recorded</p>
+                </div>
+            </div>
+            
+            <div class="timestamp" id="timestamp">Last updated: Never</div>
+        </div>
+    </div>
+    
+    <script src="display.js"></script>
+</body>
+</html>
