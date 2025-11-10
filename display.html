@@ -20,7 +20,38 @@
                 </div>
             </div>
             
-            <div class="vitals-display">
+            <!-- Session Connection Section -->
+            <div id="sessionConnect" class="session-connect">
+                <h3>Connect to Control Session</h3>
+                <div class="connection-options">
+                    <div class="connection-option">
+                        <h4>🌐 Internet Connection</h4>
+                        <p>Connect to a control panel over the internet using a Session ID</p>
+                        <div class="session-input-group">
+                            <input type="text" id="sessionIdInput" placeholder="Enter Session ID" class="session-input">
+                            <button id="connectBtn" class="btn-connect">Connect</button>
+                        </div>
+                        <div id="connectionStatus" class="connection-status"></div>
+                    </div>
+                    <div class="connection-divider">OR</div>
+                    <div class="connection-option">
+                        <h4>💻 Local Mode</h4>
+                        <p>Use localStorage (same browser/device only)</p>
+                        <button id="localModeBtn" class="btn-local">Use Local Mode</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="monitorDisplay" class="monitor-display" style="display: none;">
+                <div class="monitor-header">
+                    <div class="hospital-name">WEBOBS PATIENT MONITOR</div>
+                    <div class="connection-indicator">
+                        <span id="connectionIndicator" class="indicator-dot"></span>
+                        <span id="connectionText">Connected</span>
+                    </div>
+                </div>
+                
+                <div class="vitals-display">
                 <div class="vital-card vital-hr">
                     <div class="vital-label">Heart Rate</div>
                     <div class="vital-value" id="hrValue">--</div>
@@ -62,9 +93,11 @@
             </div>
             
             <div class="timestamp" id="timestamp">Last updated: Never</div>
+            </div>
         </div>
     </div>
     
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="display.js"></script>
 </body>
 </html>
