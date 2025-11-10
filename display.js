@@ -271,9 +271,10 @@ function animateECG() {
             // PR segment - isoelectric with slight noise
             y = centerY + baselineWander + noise;
         } else if (progress >= 0.15 && progress < 0.17) {
-            // Q wave - small downward deflection
+            // Q wave - small downward deflection (more pointy)
             const qProgress = (progress - 0.15) / 0.02;
-            y = centerY + Math.sin(qProgress * Math.PI) * 4 + baselineWander + noise;
+            // Use exponential to make it pointier
+            y = centerY + Math.pow(Math.sin(qProgress * Math.PI), 0.6) * 5 + baselineWander + noise;
         } else if (progress >= 0.17 && progress < 0.21) {
             // R wave (peak) - sharp but not perfect
             const rProgress = (progress - 0.17) / 0.04;
@@ -286,24 +287,26 @@ function animateECG() {
             }
             y = centerY - rShape * (40 + ecgBeatVariation * 8) + baselineWander + noise;
         } else if (progress >= 0.21 && progress < 0.24) {
-            // S wave - quick downward deflection
+            // S wave - should dip down then arc back up smoothly
             const sProgress = (progress - 0.21) / 0.03;
-            y = centerY + Math.sin(sProgress * Math.PI) * 7 + baselineWander + noise;
+            // Create a smooth dip and recovery curve
+            const sCurve = Math.sin(sProgress * Math.PI);
+            y = centerY + sCurve * 8 + baselineWander + noise;
         } else if (progress >= 0.26 && progress < 0.32) {
             // ST segment - slight elevation or depression
             const stDeviation = ecgBeatVariation * 2;
             y = centerY + stDeviation + baselineWander + noise;
         } else if (progress >= 0.32 && progress < 0.50) {
-            // T wave - rounded, slightly asymmetric
+            // T wave - slightly smaller and more pointy
             const tProgress = (progress - 0.32) / 0.18;
-            // Make T wave slightly asymmetric (longer descent)
+            // Make T wave more pointy with exponential curve
             let tShape;
             if (tProgress < 0.4) {
-                tShape = Math.sin(tProgress / 0.4 * Math.PI / 2);
+                tShape = Math.pow(Math.sin(tProgress / 0.4 * Math.PI / 2), 0.8);
             } else {
-                tShape = Math.cos((tProgress - 0.4) / 0.6 * Math.PI / 2);
+                tShape = Math.pow(Math.cos((tProgress - 0.4) / 0.6 * Math.PI / 2), 0.8);
             }
-            y = centerY - tShape * (13 + ecgBeatVariation * 3) + baselineWander + noise;
+            y = centerY - tShape * (11 + ecgBeatVariation * 2.5) + baselineWander + noise;
         }
         
         if (x === 0) {
