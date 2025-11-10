@@ -1,6 +1,10 @@
 # WebObs - Virtual Observations Machine
 
+[![Deploy to GitHub Pages](https://github.com/charlieatkinson33/WebObs/actions/workflows/deploy.yml/badge.svg)](https://github.com/charlieatkinson33/WebObs/actions/workflows/deploy.yml)
+
 Internet-facing hosted observations system for displaying and sending patient vitals across different networks.
+
+🌐 **Live Demo**: [https://charlieatkinson33.github.io/WebObs/](https://charlieatkinson33.github.io/WebObs/)
 
 ## Overview
 
@@ -20,8 +24,25 @@ WebObs is a web-based virtual observations machine that simulates a medical pati
 
 ## Quick Start
 
-### Internet Mode (Recommended)
+### Using the Hosted Website (Easiest)
 
+1. **On the Control Device**:
+   - Visit [https://charlieatkinson33.github.io/WebObs/](https://charlieatkinson33.github.io/WebObs/)
+   - Click **Control**
+   - Note the Session ID displayed at the top
+   - Share this Session ID with the display device
+   - Enter patient vitals and click **Send Vitals**
+
+2. **On the Display Device** (can be anywhere with internet):
+   - Visit [https://charlieatkinson33.github.io/WebObs/](https://charlieatkinson33.github.io/WebObs/)
+   - Click **Display**
+   - Enter the Session ID from the control device
+   - Click **Connect**
+   - View the patient monitor with live vitals and audio beeps
+
+### Running Locally
+
+#### Internet Mode
 1. **On the Control Device**:
    - Open `index.html` in a web browser
    - Click **Control**
@@ -36,7 +57,7 @@ WebObs is a web-based virtual observations machine that simulates a medical pati
    - Click **Connect**
    - View the patient monitor with live vitals and audio beeps
 
-### Local Mode (Same Browser)
+#### Local Mode (Same Browser)
 
 1. Open `index.html` in a web browser
 2. Click **Control** to access the vitals input panel
@@ -97,15 +118,39 @@ Works in all modern browsers that support:
 
 ## Deployment
 
-### Simple Deployment (No Server Required)
-Simply open `index.html` directly in a browser or host all files on any static web server.
+### Official Hosted Version
+This project is automatically deployed to GitHub Pages at:
+**[https://charlieatkinson33.github.io/WebObs/](https://charlieatkinson33.github.io/WebObs/)**
 
-### Web Hosting
+The deployment happens automatically via GitHub Actions whenever changes are pushed to the main branch.
+
+### Deploying Your Own Copy
+
+#### GitHub Pages (Recommended - Free)
+1. Fork this repository
+2. Go to your repository Settings → Pages
+3. Under "Build and deployment", select "GitHub Actions" as the source
+4. The workflow will automatically deploy your site to `https://[your-username].github.io/WebObs/`
+
+#### Other Static Hosting Services
 Upload all files to any web hosting service:
-- GitHub Pages
-- Netlify
-- Vercel
-- Any static hosting provider
+- **Netlify**: Drag and drop the entire folder
+- **Vercel**: Import from GitHub repository
+- **GitHub Pages**: Enable in repository settings
+- **Any static hosting provider**: Upload all HTML, CSS, and JS files
+
+#### Local Development
+Simply open `index.html` directly in a browser or host all files on any static web server:
+```bash
+# Using Python
+python3 -m http.server 8080
+
+# Using Node.js
+npx http-server
+
+# Using PHP
+php -S localhost:8080
+```
 
 No build process or server-side code required!
 
