@@ -18,6 +18,13 @@ let spo2Offset = 0;
 let etco2Offset = 0;
 let currentHeartRate = 75;
 
+// Variability parameters for realistic waveforms
+let baselineWander = 0;
+let baselineWanderSpeed = 0.001;
+let ecgBeatVariation = 0;
+let spo2AmplitudeVariation = 0;
+let breathingCycleVariation = 0;
+
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize audio context
     initAudioContext();
@@ -197,6 +204,14 @@ function animateECG() {
     const height = ecgCanvas.height;
     const centerY = height / 2;
     
+    // Update baseline wander (slow sinusoidal drift)
+    baselineWander = Math.sin(ecgOffset * baselineWanderSpeed) * 3;
+    
+    // Update beat-to-beat variation (subtle changes in amplitude)
+    if (ecgOffset % (width / 3) < 2) {
+        ecgBeatVariation = (Math.random() - 0.5) * 0.15; // ±15% variation
+    }
+    
     // Clear canvas
     ecgCtx.fillStyle = '#000';
     ecgCtx.fillRect(0, 0, width, height);
@@ -239,26 +254,56 @@ function animateECG() {
         const adjustedX = (x + ecgOffset) % beatWidth;
         const progress = adjustedX / beatWidth;
         
-        let y = centerY;
+        // Add high-frequency noise for realism
+        const noise = (Math.random() - 0.5) * 0.8;
         
-        // ECG wave pattern (simplified)
-        if (progress < 0.05) {
-            // P wave
-            y = centerY - Math.sin(progress / 0.05 * Math.PI) * 8;
-        } else if (progress >= 0.15 && progress < 0.18) {
-            // Q wave
-            y = centerY + 5;
-        } else if (progress >= 0.18 && progress < 0.22) {
-            // R wave (peak)
-            const rProgress = (progress - 0.18) / 0.04;
-            y = centerY - Math.sin(rProgress * Math.PI) * 40;
-        } else if (progress >= 0.22 && progress < 0.25) {
-            // S wave
-            y = centerY + 8;
-        } else if (progress >= 0.35 && progress < 0.50) {
-            // T wave
-            const tProgress = (progress - 0.35) / 0.15;
-            y = centerY - Math.sin(tProgress * Math.PI) * 12;
+        let y = centerY + baselineWander + noise;
+        
+        // ECG wave pattern with natural variations
+        if (progress < 0.06) {
+            // P wave - slightly asymmetric
+            const pProgress = progress / 0.06;
+            const pShape = Math.sin(pProgress * Math.PI);
+            // Add slight asymmetry
+            const asymmetry = pProgress < 0.5 ? 1.0 : 0.9;
+            y = centerY - pShape * (8 + ecgBeatVariation * 2) * asymmetry + baselineWander + noise;
+        } else if (progress >= 0.12 && progress < 0.15) {
+            // PR segment - isoelectric with slight noise
+            y = centerY + baselineWander + noise;
+        } else if (progress >= 0.15 && progress < 0.17) {
+            // Q wave - small downward deflection
+            const qProgress = (progress - 0.15) / 0.02;
+            y = centerY + Math.sin(qProgress * Math.PI) * 4 + baselineWander + noise;
+        } else if (progress >= 0.17 && progress < 0.21) {
+            // R wave (peak) - sharp but not perfect
+            const rProgress = (progress - 0.17) / 0.04;
+            // Use exponential for sharper rise, sinusoidal for fall
+            let rShape;
+            if (rProgress < 0.5) {
+                rShape = Math.pow(rProgress * 2, 0.7);
+            } else {
+                rShape = 1 - Math.pow((rProgress - 0.5) * 2, 1.3);
+            }
+            y = centerY - rShape * (40 + ecgBeatVariation * 8) + baselineWander + noise;
+        } else if (progress >= 0.21 && progress < 0.24) {
+            // S wave - quick downward deflection
+            const sProgress = (progress - 0.21) / 0.03;
+            y = centerY + Math.sin(sProgress * Math.PI) * 7 + baselineWander + noise;
+        } else if (progress >= 0.26 && progress < 0.32) {
+            // ST segment - slight elevation or depression
+            const stDeviation = ecgBeatVariation * 2;
+            y = centerY + stDeviation + baselineWander + noise;
+        } else if (progress >= 0.32 && progress < 0.50) {
+            // T wave - rounded, slightly asymmetric
+            const tProgress = (progress - 0.32) / 0.18;
+            // Make T wave slightly asymmetric (longer descent)
+            let tShape;
+            if (tProgress < 0.4) {
+                tShape = Math.sin(tProgress / 0.4 * Math.PI / 2);
+            } else {
+                tShape = Math.cos((tProgress - 0.4) / 0.6 * Math.PI / 2);
+            }
+            y = centerY - tShape * (13 + ecgBeatVariation * 3) + baselineWander + noise;
         }
         
         if (x === 0) {
@@ -285,6 +330,14 @@ function animateSpO2() {
     const width = spo2Canvas.width;
     const height = spo2Canvas.height;
     const centerY = height / 2;
+    
+    // Update amplitude variation for each pulse
+    if (spo2Offset % (width / 3) < 2) {
+        spo2AmplitudeVariation = 0.85 + Math.random() * 0.3; // 85-115% of base amplitude
+    }
+    
+    // Slow baseline drift
+    const baselineDrift = Math.sin(spo2Offset * 0.002) * 2;
     
     // Clear canvas
     spo2Ctx.fillStyle = '#000';
@@ -326,16 +379,44 @@ function animateSpO2() {
         const adjustedX = (x + spo2Offset) % beatWidth;
         const progress = adjustedX / beatWidth;
         
-        let y = centerY + 20; // Baseline lower
+        // Add subtle noise
+        const noise = (Math.random() - 0.5) * 1.2;
         
-        // Plethysmograph wave (smooth pulse wave)
-        if (progress >= 0.1 && progress < 0.5) {
-            const pulseProgress = (progress - 0.1) / 0.4;
-            // Sharp rise, slower fall
-            if (pulseProgress < 0.3) {
-                y = centerY + 20 - Math.sin(pulseProgress / 0.3 * Math.PI / 2) * 35;
-            } else {
-                y = centerY + 20 - Math.cos((pulseProgress - 0.3) / 0.7 * Math.PI / 2) * 35;
+        let y = centerY + 20 + baselineDrift + noise; // Baseline
+        
+        // Plethysmograph wave - more realistic pulse shape
+        if (progress >= 0.08 && progress < 0.55) {
+            const pulseProgress = (progress - 0.08) / 0.47;
+            
+            // Anachrotic (rising) phase - sharp rise
+            if (pulseProgress < 0.25) {
+                const riseShape = Math.pow(pulseProgress / 0.25, 0.6);
+                y = centerY + 20 - riseShape * 35 * spo2AmplitudeVariation + baselineDrift + noise;
+            } 
+            // Peak with slight rounding
+            else if (pulseProgress < 0.35) {
+                const peakProgress = (pulseProgress - 0.25) / 0.1;
+                const peakShape = 1 - Math.pow(peakProgress, 2) * 0.1;
+                y = centerY + 20 - peakShape * 35 * spo2AmplitudeVariation + baselineDrift + noise;
+            }
+            // Catacrotic (falling) phase with dicrotic notch
+            else if (pulseProgress < 0.55) {
+                const fallProgress = (pulseProgress - 0.35) / 0.2;
+                const fallShape = 1 - fallProgress * 0.7;
+                y = centerY + 20 - fallShape * 35 * spo2AmplitudeVariation + baselineDrift + noise;
+            }
+            // Dicrotic notch
+            else if (pulseProgress < 0.62) {
+                const notchProgress = (pulseProgress - 0.55) / 0.07;
+                const notchDepth = Math.sin(notchProgress * Math.PI) * 3;
+                const baseHeight = (1 - 0.7) * 35 * spo2AmplitudeVariation;
+                y = centerY + 20 - baseHeight + notchDepth + baselineDrift + noise;
+            }
+            // Final decay
+            else {
+                const decayProgress = (pulseProgress - 0.62) / 0.38;
+                const decayShape = (1 - 0.7) * (1 - decayProgress);
+                y = centerY + 20 - decayShape * 35 * spo2AmplitudeVariation + baselineDrift + noise;
             }
         }
         
@@ -363,6 +444,11 @@ function animateEtCO2() {
     const width = etco2Canvas.width;
     const height = etco2Canvas.height;
     const centerY = height / 2;
+    
+    // Update breathing cycle variation (breath-to-breath variability)
+    if (etco2Offset % (width / 2) < 1.5) {
+        breathingCycleVariation = 0.9 + Math.random() * 0.2; // 90-110% variation
+    }
     
     // Clear canvas
     etco2Ctx.fillStyle = '#000';
@@ -404,21 +490,38 @@ function animateEtCO2() {
         const adjustedX = (x + etco2Offset) % breathWidth;
         const progress = adjustedX / breathWidth;
         
-        let y = centerY + 30; // Baseline
+        // Add subtle noise to capnography
+        const noise = (Math.random() - 0.5) * 0.6;
         
-        // Capnography wave (square wave with rounded edges)
-        if (progress >= 0.1 && progress < 0.15) {
-            // Inspiration (rapid rise)
-            const riseProgress = (progress - 0.1) / 0.05;
-            y = centerY + 30 - riseProgress * 40;
-        } else if (progress >= 0.15 && progress < 0.5) {
-            // Plateau (alveolar)
-            y = centerY - 10;
-        } else if (progress >= 0.5 && progress < 0.55) {
-            // Expiration (rapid fall)
-            const fallProgress = (progress - 0.5) / 0.05;
-            y = centerY - 10 + fallProgress * 40;
+        let y = centerY + 30 + noise; // Baseline
+        
+        // Capnography wave - more realistic with rounded transitions
+        if (progress >= 0.08 && progress < 0.18) {
+            // Phase I - Beginning of exhalation (dead space)
+            // Gradual rise from baseline
+            const phase1Progress = (progress - 0.08) / 0.1;
+            const riseShape = Math.pow(phase1Progress, 0.4); // Gradual start
+            y = centerY + 30 - riseShape * 15 * breathingCycleVariation + noise;
+        } else if (progress >= 0.18 && progress < 0.28) {
+            // Phase II - Rapid rise (mixed dead space and alveolar gas)
+            const phase2Progress = (progress - 0.18) / 0.1;
+            // Exponential rise for realistic rapid increase
+            const rapidRise = 15 + (25 * Math.pow(phase2Progress, 0.7));
+            y = centerY + 30 - rapidRise * breathingCycleVariation + noise;
+        } else if (progress >= 0.28 && progress < 0.50) {
+            // Phase III - Alveolar plateau (slight upward slope)
+            const phase3Progress = (progress - 0.28) / 0.22;
+            // Slight upward slope during plateau (normal physiology)
+            const plateauHeight = 40 + (phase3Progress * 3);
+            y = centerY - 10 - (phase3Progress * 2) + noise * 1.5; // More noise in plateau
+        } else if (progress >= 0.50 && progress < 0.62) {
+            // Phase 0/IV - Beginning of inspiration (rapid drop but not instant)
+            const phase0Progress = (progress - 0.50) / 0.12;
+            // Smooth exponential decay for more realistic drop
+            const fallShape = 1 - Math.pow(phase0Progress, 0.5);
+            y = centerY - 10 + (1 - fallShape) * 40 * breathingCycleVariation + noise;
         }
+        // Rest is baseline (inspiratory phase)
         
         if (x === 0) {
             etco2Ctx.moveTo(x, y);
