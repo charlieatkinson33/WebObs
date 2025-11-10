@@ -343,3 +343,366 @@ body {
 .vital-card.active {
     animation: pulse 1s ease-in-out infinite;
 }
+
+/* Session Info Styles */
+.session-info {
+    background: #f5f5f5;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 30px;
+    border: 2px solid #667eea;
+}
+
+.session-info h3 {
+    color: #667eea;
+    margin-bottom: 15px;
+}
+
+.session-id-container {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.session-id-container label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.session-id-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.session-id-display span {
+    font-family: 'Courier New', monospace;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #667eea;
+    flex: 1;
+    padding: 8px;
+    background: #f0f0f0;
+    border-radius: 4px;
+}
+
+.copy-btn {
+    padding: 8px 15px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1.2em;
+    transition: background 0.3s;
+}
+
+.copy-btn:hover {
+    background: #45a049;
+}
+
+.session-status {
+    margin-top: 10px;
+}
+
+.session-status span {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
+.status-connected {
+    background: #4CAF50;
+    color: white;
+}
+
+.status-disconnected {
+    background: #999;
+    color: white;
+}
+
+.status-warning {
+    background: #ff9800;
+    color: white;
+}
+
+.session-help {
+    margin-top: 10px;
+    font-size: 0.9em;
+    color: #666;
+    font-style: italic;
+}
+
+/* Display Session Connection Styles */
+.session-connect {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 20px;
+}
+
+.session-connect h3 {
+    color: #667eea;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.connection-options {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.connection-option {
+    flex: 1;
+    min-width: 250px;
+    padding: 20px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.connection-option h4 {
+    color: #667eea;
+    margin-bottom: 10px;
+}
+
+.connection-option p {
+    color: #666;
+    font-size: 0.9em;
+    margin-bottom: 15px;
+}
+
+.connection-divider {
+    font-weight: bold;
+    color: #999;
+    padding: 0 10px;
+}
+
+.session-input-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.session-input {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1em;
+    font-family: 'Courier New', monospace;
+}
+
+.session-input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.btn-connect {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.3s;
+}
+
+.btn-connect:hover {
+    transform: translateY(-2px);
+}
+
+.btn-local {
+    padding: 12px 24px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.3s;
+}
+
+.btn-local:hover {
+    transform: translateY(-2px);
+}
+
+.connection-status {
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    text-align: center;
+}
+
+.connection-status.info {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.connection-status.success {
+    background: #e8f5e9;
+    color: #388e3c;
+}
+
+.connection-status.error {
+    background: #ffebee;
+    color: #d32f2f;
+}
+
+/* Monitor Display Styles */
+.monitor-display {
+    background: #1a1a1a;
+    border-radius: 12px;
+    padding: 20px;
+    border: 4px solid #333;
+}
+
+.monitor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: #2a2a2a;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #444;
+}
+
+.hospital-name {
+    color: #0ff;
+    font-weight: bold;
+    font-size: 1.2em;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px #0ff;
+}
+
+.connection-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #0f0;
+}
+
+.indicator-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #666;
+}
+
+.indicator-dot.connected {
+    background: #0f0;
+    box-shadow: 0 0 10px #0f0;
+    animation: blink 2s ease-in-out infinite;
+}
+
+.indicator-dot.disconnected {
+    background: #f00;
+    box-shadow: 0 0 10px #f00;
+}
+
+@keyframes blink {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
+}
+
+/* Update vital cards for monitor look */
+.monitor-display .vital-card {
+    background: #0a0a0a;
+    border: 2px solid #0ff;
+    box-shadow: inset 0 0 20px rgba(0, 255, 255, 0.2);
+}
+
+.monitor-display .vital-card.vital-hr {
+    border-color: #0f0;
+    box-shadow: inset 0 0 20px rgba(0, 255, 0, 0.2);
+}
+
+.monitor-display .vital-card.vital-hr .vital-label,
+.monitor-display .vital-card.vital-hr .vital-value,
+.monitor-display .vital-card.vital-hr .vital-unit {
+    color: #0f0;
+    text-shadow: 0 0 5px #0f0;
+}
+
+.monitor-display .vital-card.vital-spo2 {
+    border-color: #ff0;
+    box-shadow: inset 0 0 20px rgba(255, 255, 0, 0.2);
+}
+
+.monitor-display .vital-card.vital-spo2 .vital-label,
+.monitor-display .vital-card.vital-spo2 .vital-value,
+.monitor-display .vital-card.vital-spo2 .vital-unit {
+    color: #ff0;
+    text-shadow: 0 0 5px #ff0;
+}
+
+.monitor-display .vital-card.vital-bp {
+    border-color: #f0f;
+    box-shadow: inset 0 0 20px rgba(255, 0, 255, 0.2);
+}
+
+.monitor-display .vital-card.vital-bp .vital-label,
+.monitor-display .vital-card.vital-bp .vital-value,
+.monitor-display .vital-card.vital-bp .vital-unit {
+    color: #f0f;
+    text-shadow: 0 0 5px #f0f;
+}
+
+.monitor-display .vital-card.vital-temp {
+    border-color: #f80;
+    box-shadow: inset 0 0 20px rgba(255, 136, 0, 0.2);
+}
+
+.monitor-display .vital-card.vital-temp .vital-label,
+.monitor-display .vital-card.vital-temp .vital-value,
+.monitor-display .vital-card.vital-temp .vital-unit {
+    color: #f80;
+    text-shadow: 0 0 5px #f80;
+}
+
+.monitor-display .vital-card.vital-rr {
+    border-color: #0ff;
+    box-shadow: inset 0 0 20px rgba(0, 255, 255, 0.2);
+}
+
+.monitor-display .vital-card.vital-rr .vital-label,
+.monitor-display .vital-card.vital-rr .vital-value,
+.monitor-display .vital-card.vital-rr .vital-unit {
+    color: #0ff;
+    text-shadow: 0 0 5px #0ff;
+}
+
+.monitor-display .observations-section {
+    background: #2a2a2a;
+    border: 2px solid #666;
+}
+
+.monitor-display .observations-section h2 {
+    color: #0ff;
+}
+
+.monitor-display .observations-content {
+    background: #1a1a1a;
+    color: #fff;
+    border: 1px solid #444;
+}
+
+.monitor-display .timestamp {
+    color: #0ff;
+}
