@@ -51,39 +51,60 @@
                     </div>
                 </div>
                 
-                <div class="vitals-display">
-                <div class="vital-card vital-hr">
-                    <div class="vital-label">Heart Rate</div>
-                    <div class="vital-value" id="hrValue">--</div>
-                    <div class="vital-unit">BPM</div>
-                    <div class="vital-waveform" id="hrWaveform"></div>
+                <!-- Waveform Lines -->
+                <div class="waveform-container">
+                    <!-- HR / ECG Line (Green) -->
+                    <div class="waveform-line waveform-hr">
+                        <div class="waveform-info">
+                            <div class="waveform-label">HR</div>
+                            <div class="waveform-value" id="hrValue">--</div>
+                            <div class="waveform-unit">BPM</div>
+                            <div class="waveform-sublabel">Lead II</div>
+                        </div>
+                        <div class="waveform-trace">
+                            <canvas id="ecgCanvas" class="trace-canvas"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- SpO2 Line (Yellow) -->
+                    <div class="waveform-line waveform-spo2">
+                        <div class="waveform-info">
+                            <div class="waveform-label">SpO<sub>2</sub></div>
+                            <div class="waveform-value" id="spo2Value">--</div>
+                            <div class="waveform-unit">%</div>
+                        </div>
+                        <div class="waveform-trace">
+                            <canvas id="spo2Canvas" class="trace-canvas"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- EtCO2 Line (White) -->
+                    <div class="waveform-line waveform-etco2">
+                        <div class="waveform-info">
+                            <div class="waveform-label">EtCO<sub>2</sub></div>
+                            <div class="waveform-value" id="etco2Value">38</div>
+                            <div class="waveform-unit">mmHg</div>
+                        </div>
+                        <div class="waveform-trace">
+                            <canvas id="etco2Canvas" class="trace-canvas"></canvas>
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="vital-card vital-spo2">
-                    <div class="vital-label">SpO2</div>
-                    <div class="vital-value" id="spo2Value">--</div>
-                    <div class="vital-unit">%</div>
-                    <div class="vital-waveform" id="spo2Waveform"></div>
+                <!-- Bottom Parameter Boxes -->
+                <div class="parameter-boxes">
+                    <div class="param-box param-rr">
+                        <div class="param-label">RR</div>
+                        <div class="param-value" id="rrValue">--</div>
+                        <div class="param-unit">breaths/min</div>
+                    </div>
+                    
+                    <div class="param-box param-nibp">
+                        <div class="param-label">NIBP</div>
+                        <div class="param-value" id="bpValue">--/--</div>
+                        <div class="param-unit">mmHg</div>
+                    </div>
                 </div>
-                
-                <div class="vital-card vital-bp">
-                    <div class="vital-label">Blood Pressure</div>
-                    <div class="vital-value" id="bpValue">--/--</div>
-                    <div class="vital-unit">mmHg</div>
-                </div>
-                
-                <div class="vital-card vital-temp">
-                    <div class="vital-label">Temperature</div>
-                    <div class="vital-value" id="tempValue">--</div>
-                    <div class="vital-unit">°C</div>
-                </div>
-                
-                <div class="vital-card vital-rr">
-                    <div class="vital-label">Respiratory Rate</div>
-                    <div class="vital-value" id="rrValue">--</div>
-                    <div class="vital-unit">breaths/min</div>
-                </div>
-            </div>
             
             <div class="observations-section">
                 <h2>Observations</h2>
