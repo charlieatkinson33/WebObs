@@ -204,12 +204,30 @@ function animateECG() {
     const height = ecgCanvas.height;
     const centerY = height / 2;
     
-    // Update baseline wander (slow sinusoidal drift)
-    baselineWander = Math.sin(ecgOffset * baselineWanderSpeed) * 3;
+    // ECG parameters (Gaussian model)
+    const heartRateBPM = currentHeartRate || 75;
+    const cycleTimeS = 60 / heartRateBPM; // seconds per beat
+    const pixelsPerSecond = 50; // sweep speed
+    const beatWidthPixels = cycleTimeS * pixelsPerSecond;
     
-    // Update beat-to-beat variation (subtle changes in amplitude)
-    if (ecgOffset % (width / 3) < 2) {
-        ecgBeatVariation = (Math.random() - 0.5) * 0.15; // ±15% variation
+    // ECG component parameters (relative to R peak at t=0)
+    const components = {
+        P: { amp: 0.15, dur: 0.09, tCenter: -0.17 },
+        Q: { amp: -0.20, dur: 0.02, tCenter: -0.025 },
+        R: { amp: 1.60, dur: 0.03, tCenter: 0.0 },
+        S: { amp: -0.30, dur: 0.04, tCenter: 0.045 },
+        T: { amp: 0.35, dur: 0.16, tCenter: 0.24 }
+    };
+    
+    // Amplitude scale (pixels per mV)
+    const amplitudeScale = 25;
+    
+    // Update baseline wander
+    baselineWander = Math.sin(ecgOffset * 0.002) * 2;
+    
+    // Update beat-to-beat variation
+    if (ecgOffset % beatWidthPixels < 2) {
+        ecgBeatVariation = (Math.random() - 0.5) * 0.1;
     }
     
     // Clear canvas
@@ -221,7 +239,6 @@ function animateECG() {
     ecgCtx.globalAlpha = 0.1;
     ecgCtx.lineWidth = 1;
     
-    // Vertical grid lines
     for (let x = 0; x < width; x += 20) {
         ecgCtx.beginPath();
         ecgCtx.moveTo(x, 0);
@@ -229,7 +246,6 @@ function animateECG() {
         ecgCtx.stroke();
     }
     
-    // Horizontal grid lines
     for (let y = 0; y < height; y += 20) {
         ecgCtx.beginPath();
         ecgCtx.moveTo(0, y);
@@ -239,7 +255,7 @@ function animateECG() {
     
     ecgCtx.globalAlpha = 1.0;
     
-    // Draw ECG waveform
+    // Draw ECG waveform using Gaussian model
     ecgCtx.strokeStyle = '#0f0';
     ecgCtx.lineWidth = 2;
     ecgCtx.shadowBlur = 10;
@@ -247,67 +263,28 @@ function animateECG() {
     ecgCtx.beginPath();
     
     const speed = 2;
-    const beatsPerScreen = 3;
-    const beatWidth = width / beatsPerScreen;
     
     for (let x = 0; x < width; x++) {
-        const adjustedX = (x + ecgOffset) % beatWidth;
-        const progress = adjustedX / beatWidth;
+        const adjustedX = (x + ecgOffset) % beatWidthPixels;
+        const tSeconds = (adjustedX / pixelsPerSecond) - (cycleTimeS * 0.2); // offset to center waveform
         
-        // Add high-frequency noise for realism
-        const noise = (Math.random() - 0.5) * 0.8;
-        
-        let y = centerY + baselineWander + noise;
-        
-        // ECG wave pattern with natural variations
-        if (progress < 0.06) {
-            // P wave - slightly asymmetric
-            const pProgress = progress / 0.06;
-            const pShape = Math.sin(pProgress * Math.PI);
-            // Add slight asymmetry
-            const asymmetry = pProgress < 0.5 ? 1.0 : 0.9;
-            y = centerY - pShape * (8 + ecgBeatVariation * 2) * asymmetry + baselineWander + noise;
-        } else if (progress >= 0.12 && progress < 0.15) {
-            // PR segment - isoelectric with slight noise
-            y = centerY + baselineWander + noise;
-        } else if (progress >= 0.15 && progress < 0.17) {
-            // Q wave - small downward deflection (more pointy)
-            const qProgress = (progress - 0.15) / 0.02;
-            // Use exponential to make it pointier
-            y = centerY + Math.pow(Math.sin(qProgress * Math.PI), 0.6) * 5 + baselineWander + noise;
-        } else if (progress >= 0.17 && progress < 0.21) {
-            // R wave (peak) - sharp but not perfect
-            const rProgress = (progress - 0.17) / 0.04;
-            // Use exponential for sharper rise, sinusoidal for fall
-            let rShape;
-            if (rProgress < 0.5) {
-                rShape = Math.pow(rProgress * 2, 0.7);
-            } else {
-                rShape = 1 - Math.pow((rProgress - 0.5) * 2, 1.3);
-            }
-            y = centerY - rShape * (40 + ecgBeatVariation * 8) + baselineWander + noise;
-        } else if (progress >= 0.21 && progress < 0.24) {
-            // S wave - should dip down then arc back up smoothly
-            const sProgress = (progress - 0.21) / 0.03;
-            // Create a smooth dip and recovery curve
-            const sCurve = Math.sin(sProgress * Math.PI);
-            y = centerY + sCurve * 8 + baselineWander + noise;
-        } else if (progress >= 0.26 && progress < 0.32) {
-            // ST segment - slight elevation or depression
-            const stDeviation = ecgBeatVariation * 2;
-            y = centerY + stDeviation + baselineWander + noise;
-        } else if (progress >= 0.32 && progress < 0.50) {
-            // T wave - slightly smaller and more pointy
-            const tProgress = (progress - 0.32) / 0.18;
-            // Make T wave more pointy with exponential curve
-            let tShape;
-            if (tProgress < 0.4) {
-                tShape = Math.pow(Math.sin(tProgress / 0.4 * Math.PI / 2), 0.8);
-            } else {
-                tShape = Math.pow(Math.cos((tProgress - 0.4) / 0.6 * Math.PI / 2), 0.8);
-            }
-            y = centerY - tShape * (11 + ecgBeatVariation * 2.5) + baselineWander + noise;
+        // Sum of Gaussians for each component
+        let ecgValue = 0;
+        for (const [name, params] of Object.entries(components)) {
+            const sigma = params.dur / 2.355; // FWHM to sigma
+            const gaussian = params.amp * Math.exp(-0.5 * Math.pow((tSeconds - params.tCenter) / sigma, 2));
+            ecgValue += gaussian;
         }
+        
+        // Apply beat-to-beat variation
+        ecgValue *= (1 + ecgBeatVariation);
+        
+        // Add noise
+        const noise = (Math.random() - 0.5) * 0.015;
+        ecgValue += noise;
+        
+        // Convert to pixels
+        const y = centerY - (ecgValue * amplitudeScale) + baselineWander;
         
         if (x === 0) {
             ecgCtx.moveTo(x, y);
@@ -320,7 +297,7 @@ function animateECG() {
     ecgCtx.shadowBlur = 0;
     
     ecgOffset += speed;
-    if (ecgOffset >= beatWidth) {
+    if (ecgOffset >= beatWidthPixels) {
         ecgOffset = 0;
     }
     
@@ -334,13 +311,30 @@ function animateSpO2() {
     const height = spo2Canvas.height;
     const centerY = height / 2;
     
-    // Update amplitude variation for each pulse
-    if (spo2Offset % (width / 3) < 2) {
-        spo2AmplitudeVariation = 0.85 + Math.random() * 0.3; // 85-115% of base amplitude
+    // SpO2 plethysmograph parameters
+    const heartRateBPM = currentHeartRate || 75;
+    const cycleTimeS = 60 / heartRateBPM;
+    const pixelsPerSecond = 50;
+    const beatWidthPixels = cycleTimeS * pixelsPerSecond;
+    
+    // Plethysmograph parameters
+    const upstrokeFraction = 0.18;
+    const upstrokeSteepness = 14.0;
+    const notchTimeFraction = 0.35;
+    const notchDepth = 0.25;
+    const reboundFraction = 0.45;
+    const reboundHeight = 0.10;
+    const diastolicTauFraction = 0.30;
+    const acAmplitude = 35; // pixels
+    const dcLevel = 20; // baseline offset
+    
+    // Update amplitude variation
+    if (spo2Offset % beatWidthPixels < 2) {
+        spo2AmplitudeVariation = 0.9 + Math.random() * 0.2;
     }
     
-    // Slow baseline drift
-    const baselineDrift = Math.sin(spo2Offset * 0.002) * 2;
+    // Baseline drift
+    const baselineDrift = Math.sin(spo2Offset * 0.003) * 2;
     
     // Clear canvas
     spo2Ctx.fillStyle = '#000';
@@ -375,53 +369,60 @@ function animateSpO2() {
     spo2Ctx.beginPath();
     
     const speed = 2;
-    const beatsPerScreen = 3;
-    const beatWidth = width / beatsPerScreen;
+    
+    // Helper function: sigmoid/logistic function
+    function sigmoid(x) {
+        return 1 / (1 + Math.exp(-x));
+    }
     
     for (let x = 0; x < width; x++) {
-        const adjustedX = (x + spo2Offset) % beatWidth;
-        const progress = adjustedX / beatWidth;
+        const adjustedX = (x + spo2Offset) % beatWidthPixels;
+        const t = adjustedX / beatWidthPixels; // normalized time [0, 1)
         
-        // Add subtle noise
-        const noise = (Math.random() - 0.5) * 1.2;
+        let plethValue = 0;
         
-        let y = centerY + 20 + baselineDrift + noise; // Baseline
-        
-        // Plethysmograph wave - more realistic pulse shape
-        if (progress >= 0.08 && progress < 0.55) {
-            const pulseProgress = (progress - 0.08) / 0.47;
+        // Piecewise plethysmograph shape
+        if (t < upstrokeFraction) {
+            // Systolic upstroke: logistic rise
+            const u = t / upstrokeFraction;
+            const rawSigmoid = sigmoid(upstrokeSteepness * (u - 0.5));
+            const minSig = sigmoid(upstrokeSteepness * (-0.5));
+            const maxSig = sigmoid(upstrokeSteepness * 0.5);
+            plethValue = (rawSigmoid - minSig) / (maxSig - minSig);
             
-            // Anachrotic (rising) phase - sharp rise
-            if (pulseProgress < 0.25) {
-                const riseShape = Math.pow(pulseProgress / 0.25, 0.6);
-                y = centerY + 20 - riseShape * 35 * spo2AmplitudeVariation + baselineDrift + noise;
-            } 
-            // Peak with slight rounding
-            else if (pulseProgress < 0.35) {
-                const peakProgress = (pulseProgress - 0.25) / 0.1;
-                const peakShape = 1 - Math.pow(peakProgress, 2) * 0.1;
-                y = centerY + 20 - peakShape * 35 * spo2AmplitudeVariation + baselineDrift + noise;
-            }
-            // Catacrotic (falling) phase with dicrotic notch
-            else if (pulseProgress < 0.55) {
-                const fallProgress = (pulseProgress - 0.35) / 0.2;
-                const fallShape = 1 - fallProgress * 0.7;
-                y = centerY + 20 - fallShape * 35 * spo2AmplitudeVariation + baselineDrift + noise;
-            }
-            // Dicrotic notch
-            else if (pulseProgress < 0.62) {
-                const notchProgress = (pulseProgress - 0.55) / 0.07;
-                const notchDepth = Math.sin(notchProgress * Math.PI) * 3;
-                const baseHeight = (1 - 0.7) * 35 * spo2AmplitudeVariation;
-                y = centerY + 20 - baseHeight + notchDepth + baselineDrift + noise;
-            }
-            // Final decay
-            else {
-                const decayProgress = (pulseProgress - 0.62) / 0.38;
-                const decayShape = (1 - 0.7) * (1 - decayProgress);
-                y = centerY + 20 - decayShape * 35 * spo2AmplitudeVariation + baselineDrift + noise;
-            }
+        } else if (t < notchTimeFraction) {
+            // Early fall to dicrotic notch
+            const fallProgress = (t - upstrokeFraction) / (notchTimeFraction - upstrokeFraction);
+            plethValue = 1 - (notchDepth * fallProgress);
+            
+        } else if (t < reboundFraction) {
+            // Notch rebound
+            const reboundProgress = (t - notchTimeFraction) / (reboundFraction - notchTimeFraction);
+            const yNotch = 1 - notchDepth;
+            // Use cosine ease for smooth rebound
+            const ease = (1 - Math.cos(reboundProgress * Math.PI)) / 2;
+            plethValue = yNotch + (reboundHeight * ease);
+            
+        } else {
+            // Diastolic decay: exponential tail
+            const tauPixels = diastolicTauFraction * beatWidthPixels;
+            const tElapsed = (t - reboundFraction) * beatWidthPixels;
+            const yReb = 1 - notchDepth + reboundHeight;
+            plethValue = yReb * Math.exp(-tElapsed / tauPixels);
         }
+        
+        // Apply amplitude variation
+        plethValue *= spo2AmplitudeVariation;
+        
+        // Add noise
+        const noise = (Math.random() - 0.5) * 0.02;
+        plethValue += noise;
+        
+        // Clamp to [0, 1]
+        plethValue = Math.max(0, Math.min(1, plethValue));
+        
+        // Convert to pixels
+        const y = centerY + dcLevel - (plethValue * acAmplitude) + baselineDrift;
         
         if (x === 0) {
             spo2Ctx.moveTo(x, y);
@@ -434,7 +435,7 @@ function animateSpO2() {
     spo2Ctx.shadowBlur = 0;
     
     spo2Offset += speed;
-    if (spo2Offset >= beatWidth) {
+    if (spo2Offset >= beatWidthPixels) {
         spo2Offset = 0;
     }
     
