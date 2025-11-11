@@ -18,6 +18,13 @@ let spo2Offset = 0;
 let etco2Offset = 0;
 let currentHeartRate = 75;
 
+// Variability parameters for realistic waveforms
+let baselineWander = 0;
+let baselineWanderSpeed = 0.001;
+let ecgBeatVariation = 0;
+let spo2AmplitudeVariation = 0;
+let breathingCycleVariation = 0;
+
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize audio context
     initAudioContext();
@@ -197,6 +204,32 @@ function animateECG() {
     const height = ecgCanvas.height;
     const centerY = height / 2;
     
+    // ECG parameters (Gaussian model)
+    const heartRateBPM = currentHeartRate || 75;
+    const cycleTimeS = 60 / heartRateBPM; // seconds per beat
+    const pixelsPerSecond = 50; // sweep speed
+    const beatWidthPixels = cycleTimeS * pixelsPerSecond;
+    
+    // ECG component parameters (relative to R peak at t=0)
+    const components = {
+        P: { amp: 0.15, dur: 0.09, tCenter: -0.17 },
+        Q: { amp: -0.20, dur: 0.02, tCenter: -0.025 },
+        R: { amp: 1.60, dur: 0.03, tCenter: 0.0 },
+        S: { amp: -0.30, dur: 0.04, tCenter: 0.045 },
+        T: { amp: 0.35, dur: 0.16, tCenter: 0.24 }
+    };
+    
+    // Amplitude scale (pixels per mV)
+    const amplitudeScale = 25;
+    
+    // Update baseline wander
+    baselineWander = Math.sin(ecgOffset * 0.002) * 2;
+    
+    // Update beat-to-beat variation
+    if (ecgOffset % beatWidthPixels < 2) {
+        ecgBeatVariation = (Math.random() - 0.5) * 0.1;
+    }
+    
     // Clear canvas
     ecgCtx.fillStyle = '#000';
     ecgCtx.fillRect(0, 0, width, height);
@@ -206,7 +239,6 @@ function animateECG() {
     ecgCtx.globalAlpha = 0.1;
     ecgCtx.lineWidth = 1;
     
-    // Vertical grid lines
     for (let x = 0; x < width; x += 20) {
         ecgCtx.beginPath();
         ecgCtx.moveTo(x, 0);
@@ -214,7 +246,6 @@ function animateECG() {
         ecgCtx.stroke();
     }
     
-    // Horizontal grid lines
     for (let y = 0; y < height; y += 20) {
         ecgCtx.beginPath();
         ecgCtx.moveTo(0, y);
@@ -224,7 +255,7 @@ function animateECG() {
     
     ecgCtx.globalAlpha = 1.0;
     
-    // Draw ECG waveform
+    // Draw ECG waveform using Gaussian model
     ecgCtx.strokeStyle = '#0f0';
     ecgCtx.lineWidth = 2;
     ecgCtx.shadowBlur = 10;
@@ -232,34 +263,28 @@ function animateECG() {
     ecgCtx.beginPath();
     
     const speed = 2;
-    const beatsPerScreen = 3;
-    const beatWidth = width / beatsPerScreen;
     
     for (let x = 0; x < width; x++) {
-        const adjustedX = (x + ecgOffset) % beatWidth;
-        const progress = adjustedX / beatWidth;
+        const adjustedX = (x + ecgOffset) % beatWidthPixels;
+        const tSeconds = (adjustedX / pixelsPerSecond) - (cycleTimeS * 0.2); // offset to center waveform
         
-        let y = centerY;
-        
-        // ECG wave pattern (simplified)
-        if (progress < 0.05) {
-            // P wave
-            y = centerY - Math.sin(progress / 0.05 * Math.PI) * 8;
-        } else if (progress >= 0.15 && progress < 0.18) {
-            // Q wave
-            y = centerY + 5;
-        } else if (progress >= 0.18 && progress < 0.22) {
-            // R wave (peak)
-            const rProgress = (progress - 0.18) / 0.04;
-            y = centerY - Math.sin(rProgress * Math.PI) * 40;
-        } else if (progress >= 0.22 && progress < 0.25) {
-            // S wave
-            y = centerY + 8;
-        } else if (progress >= 0.35 && progress < 0.50) {
-            // T wave
-            const tProgress = (progress - 0.35) / 0.15;
-            y = centerY - Math.sin(tProgress * Math.PI) * 12;
+        // Sum of Gaussians for each component
+        let ecgValue = 0;
+        for (const [name, params] of Object.entries(components)) {
+            const sigma = params.dur / 2.355; // FWHM to sigma
+            const gaussian = params.amp * Math.exp(-0.5 * Math.pow((tSeconds - params.tCenter) / sigma, 2));
+            ecgValue += gaussian;
         }
+        
+        // Apply beat-to-beat variation
+        ecgValue *= (1 + ecgBeatVariation);
+        
+        // Add noise
+        const noise = (Math.random() - 0.5) * 0.015;
+        ecgValue += noise;
+        
+        // Convert to pixels
+        const y = centerY - (ecgValue * amplitudeScale) + baselineWander;
         
         if (x === 0) {
             ecgCtx.moveTo(x, y);
@@ -272,7 +297,7 @@ function animateECG() {
     ecgCtx.shadowBlur = 0;
     
     ecgOffset += speed;
-    if (ecgOffset >= beatWidth) {
+    if (ecgOffset >= beatWidthPixels) {
         ecgOffset = 0;
     }
     
@@ -285,6 +310,31 @@ function animateSpO2() {
     const width = spo2Canvas.width;
     const height = spo2Canvas.height;
     const centerY = height / 2;
+    
+    // SpO2 plethysmograph parameters
+    const heartRateBPM = currentHeartRate || 75;
+    const cycleTimeS = 60 / heartRateBPM;
+    const pixelsPerSecond = 50;
+    const beatWidthPixels = cycleTimeS * pixelsPerSecond;
+    
+    // Plethysmograph parameters
+    const upstrokeFraction = 0.18;
+    const upstrokeSteepness = 14.0;
+    const notchTimeFraction = 0.35;
+    const notchDepth = 0.25;
+    const reboundFraction = 0.45;
+    const reboundHeight = 0.10;
+    const diastolicTauFraction = 0.30;
+    const acAmplitude = 35; // pixels
+    const dcLevel = 20; // baseline offset
+    
+    // Update amplitude variation
+    if (spo2Offset % beatWidthPixels < 2) {
+        spo2AmplitudeVariation = 0.9 + Math.random() * 0.2;
+    }
+    
+    // Baseline drift
+    const baselineDrift = Math.sin(spo2Offset * 0.003) * 2;
     
     // Clear canvas
     spo2Ctx.fillStyle = '#000';
@@ -319,25 +369,60 @@ function animateSpO2() {
     spo2Ctx.beginPath();
     
     const speed = 2;
-    const beatsPerScreen = 3;
-    const beatWidth = width / beatsPerScreen;
+    
+    // Helper function: sigmoid/logistic function
+    function sigmoid(x) {
+        return 1 / (1 + Math.exp(-x));
+    }
     
     for (let x = 0; x < width; x++) {
-        const adjustedX = (x + spo2Offset) % beatWidth;
-        const progress = adjustedX / beatWidth;
+        const adjustedX = (x + spo2Offset) % beatWidthPixels;
+        const t = adjustedX / beatWidthPixels; // normalized time [0, 1)
         
-        let y = centerY + 20; // Baseline lower
+        let plethValue = 0;
         
-        // Plethysmograph wave (smooth pulse wave)
-        if (progress >= 0.1 && progress < 0.5) {
-            const pulseProgress = (progress - 0.1) / 0.4;
-            // Sharp rise, slower fall
-            if (pulseProgress < 0.3) {
-                y = centerY + 20 - Math.sin(pulseProgress / 0.3 * Math.PI / 2) * 35;
-            } else {
-                y = centerY + 20 - Math.cos((pulseProgress - 0.3) / 0.7 * Math.PI / 2) * 35;
-            }
+        // Piecewise plethysmograph shape
+        if (t < upstrokeFraction) {
+            // Systolic upstroke: logistic rise
+            const u = t / upstrokeFraction;
+            const rawSigmoid = sigmoid(upstrokeSteepness * (u - 0.5));
+            const minSig = sigmoid(upstrokeSteepness * (-0.5));
+            const maxSig = sigmoid(upstrokeSteepness * 0.5);
+            plethValue = (rawSigmoid - minSig) / (maxSig - minSig);
+            
+        } else if (t < notchTimeFraction) {
+            // Early fall to dicrotic notch
+            const fallProgress = (t - upstrokeFraction) / (notchTimeFraction - upstrokeFraction);
+            plethValue = 1 - (notchDepth * fallProgress);
+            
+        } else if (t < reboundFraction) {
+            // Notch rebound
+            const reboundProgress = (t - notchTimeFraction) / (reboundFraction - notchTimeFraction);
+            const yNotch = 1 - notchDepth;
+            // Use cosine ease for smooth rebound
+            const ease = (1 - Math.cos(reboundProgress * Math.PI)) / 2;
+            plethValue = yNotch + (reboundHeight * ease);
+            
+        } else {
+            // Diastolic decay: exponential tail
+            const tauPixels = diastolicTauFraction * beatWidthPixels;
+            const tElapsed = (t - reboundFraction) * beatWidthPixels;
+            const yReb = 1 - notchDepth + reboundHeight;
+            plethValue = yReb * Math.exp(-tElapsed / tauPixels);
         }
+        
+        // Apply amplitude variation
+        plethValue *= spo2AmplitudeVariation;
+        
+        // Add noise
+        const noise = (Math.random() - 0.5) * 0.02;
+        plethValue += noise;
+        
+        // Clamp to [0, 1]
+        plethValue = Math.max(0, Math.min(1, plethValue));
+        
+        // Convert to pixels
+        const y = centerY + dcLevel - (plethValue * acAmplitude) + baselineDrift;
         
         if (x === 0) {
             spo2Ctx.moveTo(x, y);
@@ -350,7 +435,7 @@ function animateSpO2() {
     spo2Ctx.shadowBlur = 0;
     
     spo2Offset += speed;
-    if (spo2Offset >= beatWidth) {
+    if (spo2Offset >= beatWidthPixels) {
         spo2Offset = 0;
     }
     
@@ -363,6 +448,11 @@ function animateEtCO2() {
     const width = etco2Canvas.width;
     const height = etco2Canvas.height;
     const centerY = height / 2;
+    
+    // Update breathing cycle variation (breath-to-breath variability)
+    if (etco2Offset % (width / 2) < 1.5) {
+        breathingCycleVariation = 0.9 + Math.random() * 0.2; // 90-110% variation
+    }
     
     // Clear canvas
     etco2Ctx.fillStyle = '#000';
@@ -404,21 +494,38 @@ function animateEtCO2() {
         const adjustedX = (x + etco2Offset) % breathWidth;
         const progress = adjustedX / breathWidth;
         
-        let y = centerY + 30; // Baseline
+        // Add subtle noise to capnography
+        const noise = (Math.random() - 0.5) * 0.6;
         
-        // Capnography wave (square wave with rounded edges)
-        if (progress >= 0.1 && progress < 0.15) {
-            // Inspiration (rapid rise)
-            const riseProgress = (progress - 0.1) / 0.05;
-            y = centerY + 30 - riseProgress * 40;
-        } else if (progress >= 0.15 && progress < 0.5) {
-            // Plateau (alveolar)
-            y = centerY - 10;
-        } else if (progress >= 0.5 && progress < 0.55) {
-            // Expiration (rapid fall)
-            const fallProgress = (progress - 0.5) / 0.05;
-            y = centerY - 10 + fallProgress * 40;
+        let y = centerY + 30 + noise; // Baseline
+        
+        // Capnography wave - more realistic with rounded transitions
+        if (progress >= 0.08 && progress < 0.18) {
+            // Phase I - Beginning of exhalation (dead space)
+            // Gradual rise from baseline
+            const phase1Progress = (progress - 0.08) / 0.1;
+            const riseShape = Math.pow(phase1Progress, 0.4); // Gradual start
+            y = centerY + 30 - riseShape * 15 * breathingCycleVariation + noise;
+        } else if (progress >= 0.18 && progress < 0.28) {
+            // Phase II - Rapid rise (mixed dead space and alveolar gas)
+            const phase2Progress = (progress - 0.18) / 0.1;
+            // Exponential rise for realistic rapid increase
+            const rapidRise = 15 + (25 * Math.pow(phase2Progress, 0.7));
+            y = centerY + 30 - rapidRise * breathingCycleVariation + noise;
+        } else if (progress >= 0.28 && progress < 0.50) {
+            // Phase III - Alveolar plateau (slight upward slope)
+            const phase3Progress = (progress - 0.28) / 0.22;
+            // Slight upward slope during plateau (normal physiology)
+            const plateauHeight = 40 + (phase3Progress * 3);
+            y = centerY - 10 - (phase3Progress * 2) + noise * 1.5; // More noise in plateau
+        } else if (progress >= 0.50 && progress < 0.62) {
+            // Phase 0/IV - Beginning of inspiration (rapid drop but not instant)
+            const phase0Progress = (progress - 0.50) / 0.12;
+            // Smooth exponential decay for more realistic drop
+            const fallShape = 1 - Math.pow(phase0Progress, 0.5);
+            y = centerY - 10 + (1 - fallShape) * 40 * breathingCycleVariation + noise;
         }
+        // Rest is baseline (inspiratory phase)
         
         if (x === 0) {
             etco2Ctx.moveTo(x, y);
