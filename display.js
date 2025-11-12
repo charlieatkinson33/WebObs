@@ -222,12 +222,15 @@ function animateECG() {
     // Amplitude scale (pixels per mV)
     const amplitudeScale = 25;
     
+    // Animation speed
+    const speed = 2;
+    
     // Update baseline wander
     baselineWander = Math.sin(ecgOffset * 0.002) * 2;
     
-    // Update beat-to-beat variation
-    if (ecgOffset % beatWidthPixels < 2) {
-        ecgBeatVariation = (Math.random() - 0.5) * 0.1;
+    // Update beat-to-beat variation (smoothly)
+    if (Math.floor(ecgOffset) % Math.floor(beatWidthPixels) < speed) {
+        ecgBeatVariation = (Math.random() - 0.5) * 0.05;
     }
     
     // Clear canvas
@@ -262,8 +265,6 @@ function animateECG() {
     ecgCtx.shadowColor = '#0f0';
     ecgCtx.beginPath();
     
-    const speed = 2;
-    
     for (let x = 0; x < width; x++) {
         const adjustedX = (x + ecgOffset) % beatWidthPixels;
         const tSeconds = (adjustedX / pixelsPerSecond) - (cycleTimeS * 0.2); // offset to center waveform
@@ -279,8 +280,8 @@ function animateECG() {
         // Apply beat-to-beat variation
         ecgValue *= (1 + ecgBeatVariation);
         
-        // Add noise
-        const noise = (Math.random() - 0.5) * 0.015;
+        // Add minimal noise for realism
+        const noise = (Math.random() - 0.5) * 0.008;
         ecgValue += noise;
         
         // Convert to pixels
@@ -297,9 +298,8 @@ function animateECG() {
     ecgCtx.shadowBlur = 0;
     
     ecgOffset += speed;
-    if (ecgOffset >= beatWidthPixels) {
-        ecgOffset = 0;
-    }
+    // Use modulo to avoid discontinuities
+    ecgOffset = ecgOffset % beatWidthPixels;
     
     ecgAnimationId = requestAnimationFrame(animateECG);
 }
@@ -328,13 +328,16 @@ function animateSpO2() {
     const acAmplitude = 35; // pixels
     const dcLevel = 20; // baseline offset
     
-    // Update amplitude variation
-    if (spo2Offset % beatWidthPixels < 2) {
-        spo2AmplitudeVariation = 0.9 + Math.random() * 0.2;
+    // Animation speed
+    const speed = 2;
+    
+    // Update amplitude variation (smoothly)
+    if (Math.floor(spo2Offset) % Math.floor(beatWidthPixels) < speed) {
+        spo2AmplitudeVariation = 0.95 + Math.random() * 0.1;
     }
     
     // Baseline drift
-    const baselineDrift = Math.sin(spo2Offset * 0.003) * 2;
+    const baselineDrift = Math.sin(spo2Offset * 0.003) * 1.5;
     
     // Clear canvas
     spo2Ctx.fillStyle = '#000';
@@ -367,8 +370,6 @@ function animateSpO2() {
     spo2Ctx.shadowBlur = 10;
     spo2Ctx.shadowColor = '#ff0';
     spo2Ctx.beginPath();
-    
-    const speed = 2;
     
     // Helper function: sigmoid/logistic function
     function sigmoid(x) {
@@ -414,8 +415,8 @@ function animateSpO2() {
         // Apply amplitude variation
         plethValue *= spo2AmplitudeVariation;
         
-        // Add noise
-        const noise = (Math.random() - 0.5) * 0.02;
+        // Add minimal noise for realism
+        const noise = (Math.random() - 0.5) * 0.008;
         plethValue += noise;
         
         // Clamp to [0, 1]
@@ -435,9 +436,8 @@ function animateSpO2() {
     spo2Ctx.shadowBlur = 0;
     
     spo2Offset += speed;
-    if (spo2Offset >= beatWidthPixels) {
-        spo2Offset = 0;
-    }
+    // Use modulo to avoid discontinuities
+    spo2Offset = spo2Offset % beatWidthPixels;
     
     spo2AnimationId = requestAnimationFrame(animateSpO2);
 }
