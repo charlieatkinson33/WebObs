@@ -1,7 +1,6 @@
 // Display page JavaScript
 let audioEnabled = true;
 let heartRateInterval;
-let spo2Interval;
 let audioContext;
 let heartRateBeepCount = 0;
 let peer;
@@ -311,11 +310,16 @@ function animateSpO2() {
     const height = spo2Canvas.height;
     const centerY = height / 2;
     
-    // SpO2 plethysmograph parameters
-    const heartRateBPM = currentHeartRate || 75;
-    const cycleTimeS = 60 / heartRateBPM;
+    // SpO2 plethysmograph parameters - FIXED FREQUENCY independent of heart rate
+    const fixedFrequencyHz = 1.0; // 1 Hz (60 BPM equivalent for display)
+    const cycleTimeS = 1 / fixedFrequencyHz;
     const pixelsPerSecond = 50;
     const beatWidthPixels = cycleTimeS * pixelsPerSecond;
+    
+    // Get current SpO2 value to adjust amplitude
+    const currentSpo2 = parseInt(document.getElementById('spo2Value').textContent) || 98;
+    // Map SpO2 (85-100%) to amplitude scale (0.5-1.0)
+    const spo2AmplitudeScale = Math.max(0.5, Math.min(1.0, (currentSpo2 - 85) / 15));
     
     // Plethysmograph parameters
     const upstrokeFraction = 0.18;
@@ -412,8 +416,8 @@ function animateSpO2() {
             plethValue = yReb * Math.exp(-tElapsed / tauPixels);
         }
         
-        // Apply amplitude variation
-        plethValue *= spo2AmplitudeVariation;
+        // Apply amplitude variation and SpO2-based scaling
+        plethValue *= spo2AmplitudeVariation * spo2AmplitudeScale;
         
         // Add minimal noise for realism
         const noise = (Math.random() - 0.5) * 0.008;
@@ -490,40 +494,55 @@ function animateEtCO2() {
     const breathsPerScreen = 2;
     const breathWidth = width / breathsPerScreen;
     
+    // Helper function for smooth transitions using smoothstep
+    function smoothstep(edge0, edge1, x) {
+        const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+        return t * t * (3 - 2 * t);
+    }
+    
     for (let x = 0; x < width; x++) {
         const adjustedX = (x + etco2Offset) % breathWidth;
         const progress = adjustedX / breathWidth;
         
         // Add subtle noise to capnography
-        const noise = (Math.random() - 0.5) * 0.6;
+        const noise = (Math.random() - 0.5) * 0.4;
         
         let y = centerY + 30 + noise; // Baseline
         
-        // Capnography wave - more realistic with rounded transitions
+        // Capnography wave with smooth transitions
+        // Phase 0 (Baseline): 0.0 - 0.08
+        // Phase I (Initial rise): 0.08 - 0.18
+        // Phase II (Rapid rise): 0.18 - 0.26
+        // Phase III (Plateau): 0.26 - 0.50
+        // Phase IV (Rapid fall): 0.50 - 0.60
+        // Return to baseline: 0.60 - 1.0
+        
         if (progress >= 0.08 && progress < 0.18) {
             // Phase I - Beginning of exhalation (dead space)
-            // Gradual rise from baseline
-            const phase1Progress = (progress - 0.08) / 0.1;
-            const riseShape = Math.pow(phase1Progress, 0.4); // Gradual start
-            y = centerY + 30 - riseShape * 15 * breathingCycleVariation + noise;
-        } else if (progress >= 0.18 && progress < 0.28) {
+            // Smooth gradual rise using smoothstep
+            const phase1Progress = smoothstep(0.08, 0.18, progress);
+            y = centerY + 30 - phase1Progress * 12 * breathingCycleVariation + noise;
+            
+        } else if (progress >= 0.18 && progress < 0.26) {
             // Phase II - Rapid rise (mixed dead space and alveolar gas)
-            const phase2Progress = (progress - 0.18) / 0.1;
-            // Exponential rise for realistic rapid increase
-            const rapidRise = 15 + (25 * Math.pow(phase2Progress, 0.7));
+            // Use smoothstep for smooth acceleration
+            const phase2Progress = smoothstep(0.18, 0.26, progress);
+            const rapidRise = 12 + (28 * phase2Progress);
             y = centerY + 30 - rapidRise * breathingCycleVariation + noise;
-        } else if (progress >= 0.28 && progress < 0.50) {
+            
+        } else if (progress >= 0.26 && progress < 0.50) {
             // Phase III - Alveolar plateau (slight upward slope)
-            const phase3Progress = (progress - 0.28) / 0.22;
-            // Slight upward slope during plateau (normal physiology)
-            const plateauHeight = 40 + (phase3Progress * 3);
-            y = centerY - 10 - (phase3Progress * 2) + noise * 1.5; // More noise in plateau
-        } else if (progress >= 0.50 && progress < 0.62) {
-            // Phase 0/IV - Beginning of inspiration (rapid drop but not instant)
-            const phase0Progress = (progress - 0.50) / 0.12;
-            // Smooth exponential decay for more realistic drop
-            const fallShape = 1 - Math.pow(phase0Progress, 0.5);
-            y = centerY - 10 + (1 - fallShape) * 40 * breathingCycleVariation + noise;
+            const phase3Progress = (progress - 0.26) / 0.24;
+            // Very gentle upward slope during plateau with smooth interpolation
+            const plateauHeight = 40 * breathingCycleVariation;
+            const slopeRise = phase3Progress * 2;
+            y = centerY + 30 - plateauHeight - slopeRise + noise * 1.2;
+            
+        } else if (progress >= 0.50 && progress < 0.60) {
+            // Phase IV/0 - Beginning of inspiration (rapid but smooth drop)
+            const phase4Progress = smoothstep(0.50, 0.60, progress);
+            const startHeight = 40 * breathingCycleVariation + 2;
+            y = centerY + 30 - startHeight * (1 - phase4Progress) + noise;
         }
         // Rest is baseline (inspiratory phase)
         
@@ -583,7 +602,7 @@ function updateVitalsDisplay(vitalsData) {
     // Start beeping sounds if audio is enabled
     if (audioEnabled && audioContext) {
         startHeartRateBeep(parseInt(vitalsData.heartRate));
-        startSpo2Beep(parseInt(vitalsData.spo2));
+        // SpO2 beep removed as per requirements
     }
 }
 
@@ -626,25 +645,6 @@ function startHeartRateBeep(bpm) {
     }, interval);
 }
 
-function startSpo2Beep(spo2Value) {
-    // Clear existing interval
-    if (spo2Interval) {
-        clearInterval(spo2Interval);
-    }
-    
-    // Don't beep if SpO2 is 0 or invalid
-    if (!spo2Value || spo2Value <= 0) {
-        return;
-    }
-    
-    // SpO2 beeps every 2 seconds
-    playSpo2Beep();
-    
-    spo2Interval = setInterval(function() {
-        playSpo2Beep();
-    }, 2000);
-}
-
 function playHeartRateBeep() {
     if (!audioEnabled || !audioContext) {
         return;
@@ -655,52 +655,25 @@ function playHeartRateBeep() {
         audioContext.resume();
     }
     
-    // Create oscillator for heart rate beep (lower pitch)
+    // Create oscillator for heart rate beep (consistent frequency)
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
     
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
     
-    // Heart rate beep: 800 Hz, short duration
-    oscillator.frequency.value = 800;
+    // Heart rate beep: 800 Hz constant frequency, short duration
+    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
     oscillator.type = 'sine';
     
-    // Volume envelope
+    // Volume envelope - constant volume, sharp cutoff
+    const beepDuration = 0.08;
     gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + beepDuration - 0.01);
+    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + beepDuration);
     
     oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.1);
-}
-
-function playSpo2Beep() {
-    if (!audioEnabled || !audioContext) {
-        return;
-    }
-    
-    // Resume audio context if needed
-    if (audioContext.state === 'suspended') {
-        audioContext.resume();
-    }
-    
-    // Create oscillator for SpO2 beep (higher pitch)
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    
-    // SpO2 beep: 1200 Hz, medium duration
-    oscillator.frequency.value = 1200;
-    oscillator.type = 'sine';
-    
-    // Volume envelope
-    gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
-    
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.15);
+    oscillator.stop(audioContext.currentTime + beepDuration);
 }
 
 function toggleAudio() {
@@ -732,9 +705,6 @@ function toggleAudio() {
         // Stop all beeps
         if (heartRateInterval) {
             clearInterval(heartRateInterval);
-        }
-        if (spo2Interval) {
-            clearInterval(spo2Interval);
         }
     }
 }
