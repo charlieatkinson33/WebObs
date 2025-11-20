@@ -226,7 +226,7 @@ function animateECG() {
     const speed = 2;
     
     // Update baseline wander
-    baselineWander = Math.sin(ecgOffset * 0.002) * 2;
+    baselineWander = Math.sin(ecgOffset * 0.00002) * 2;
     
     // Update beat-to-beat variation (smoothly)
     if (Math.floor(ecgOffset) % Math.floor(beatWidthPixels) < speed) {
