@@ -12,7 +12,6 @@ WebObs is a web-based virtual observations machine that simulates a medical pati
 - **Internet/Local Session Support**: Run via the internet with sessionIDs or locally on one machine via local
 - **Peer-to-Peer Communication**: Uses WebRTC for real-time data transmission
 - **Professional Monitor Display**: Designed to roughly emulate a generic obs monitor
-- **Comprehensive vitals monitoring**: Heart rate, SpO2, blood pressure, temperature, respiratory rate
 - **Audio feedback**: Heart rate beeps synchronized to BPM and SpO2 beeps according to rate
 - **Real-time updates**: Display updates instantly when vitals are sent
 - **Responsive design**: Works on desktop and mobile devices with a responsive view for display
