@@ -20,7 +20,7 @@ let currentHeartRate = 75;
 
 // Variability parameters for realistic waveforms
 let baselineWander = 0;
-let baselineWanderSpeed = 0.001;
+let baselineWanderSpeed = 0.0000;
 let ecgBeatVariation = 0;
 let spo2AmplitudeVariation = 0;
 let breathingCycleVariation = 0;
