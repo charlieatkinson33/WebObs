@@ -712,9 +712,18 @@ function toggleAudio() {
 // Toggle display visibility for individual vital signs
 function toggleDisplay(elementId) {
     const element = document.getElementById(elementId);
-    const iconElement = document.getElementById(elementId.replace('Line', 'ToggleIcon').replace('Box', 'ToggleIcon'));
-    
     if (!element) return;
+    
+    // Map element IDs to their corresponding icon IDs
+    const iconIdMap = {
+        'hrLine': 'hrToggleIcon',
+        'spo2Line': 'spo2ToggleIcon',
+        'etco2Line': 'etco2ToggleIcon',
+        'rrBox': 'rrToggleIcon',
+        'nibpBox': 'nibpToggleIcon'
+    };
+    
+    const iconElement = document.getElementById(iconIdMap[elementId]);
     
     if (element.classList.contains('hidden')) {
         element.classList.remove('hidden');

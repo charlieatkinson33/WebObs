@@ -222,6 +222,7 @@ body {
     padding: 15px 20px;
     border-bottom: 1px solid #333;
     min-height: 120px;
+    position: relative;
 }
 
 .waveform-info {
@@ -318,6 +319,7 @@ body {
     border-radius: 10px;
     padding: 20px;
     text-align: center;
+    position: relative;
 }
 
 .param-box.param-rr {
@@ -767,14 +769,6 @@ body {
 
 .toggle-btn:active {
     transform: scale(0.95);
-}
-
-.waveform-line {
-    position: relative;
-}
-
-.param-box {
-    position: relative;
 }
 
 .param-toggle {
