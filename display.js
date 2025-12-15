@@ -662,14 +662,14 @@ function playHeartRateBeep() {
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
     
-    // Heart rate beep: 800 Hz constant frequency, short duration
-    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+    // Heart rate beep: 1100 Hz flat tone, 0.3 second duration
+    oscillator.frequency.setValueAtTime(1100, audioContext.currentTime);
     oscillator.type = 'sine';
     
-    // Volume envelope - constant volume, sharp cutoff
-    const beepDuration = 0.08;
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + beepDuration - 0.01);
+    // Volume envelope - maximum volume (1.0), sharp cutoff
+    const beepDuration = 0.3;
+    gainNode.gain.setValueAtTime(1.0, audioContext.currentTime);
+    gainNode.gain.setValueAtTime(1.0, audioContext.currentTime + beepDuration - 0.01);
     gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + beepDuration);
     
     oscillator.start(audioContext.currentTime);
@@ -706,5 +706,21 @@ function toggleAudio() {
         if (heartRateInterval) {
             clearInterval(heartRateInterval);
         }
+    }
+}
+
+// Toggle display visibility for individual vital signs
+function toggleDisplay(elementId) {
+    const element = document.getElementById(elementId);
+    const iconElement = document.getElementById(elementId.replace('Line', 'ToggleIcon').replace('Box', 'ToggleIcon'));
+    
+    if (!element) return;
+    
+    if (element.classList.contains('hidden')) {
+        element.classList.remove('hidden');
+        if (iconElement) iconElement.textContent = '👁️';
+    } else {
+        element.classList.add('hidden');
+        if (iconElement) iconElement.textContent = '🚫';
     }
 }

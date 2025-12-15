@@ -54,7 +54,10 @@
                 <!-- Waveform Lines -->
                 <div class="waveform-container">
                     <!-- HR / ECG Line (Green) -->
-                    <div class="waveform-line waveform-hr">
+                    <div class="waveform-line waveform-hr" id="hrLine">
+                        <button class="toggle-btn" onclick="toggleDisplay('hrLine')" title="Hide/Show HR">
+                            <span id="hrToggleIcon">👁️</span>
+                        </button>
                         <div class="waveform-info">
                             <div class="waveform-label">HR</div>
                             <div class="waveform-value" id="hrValue">--</div>
@@ -67,7 +70,10 @@
                     </div>
                     
                     <!-- SpO2 Line (Yellow) -->
-                    <div class="waveform-line waveform-spo2">
+                    <div class="waveform-line waveform-spo2" id="spo2Line">
+                        <button class="toggle-btn" onclick="toggleDisplay('spo2Line')" title="Hide/Show SpO2">
+                            <span id="spo2ToggleIcon">👁️</span>
+                        </button>
                         <div class="waveform-info">
                             <div class="waveform-label">SpO<sub>2</sub></div>
                             <div class="waveform-value" id="spo2Value">--</div>
@@ -79,7 +85,10 @@
                     </div>
                     
                     <!-- EtCO2 Line (White) -->
-                    <div class="waveform-line waveform-etco2">
+                    <div class="waveform-line waveform-etco2" id="etco2Line">
+                        <button class="toggle-btn" onclick="toggleDisplay('etco2Line')" title="Hide/Show EtCO2">
+                            <span id="etco2ToggleIcon">👁️</span>
+                        </button>
                         <div class="waveform-info">
                             <div class="waveform-label">EtCO<sub>2</sub></div>
                             <div class="waveform-value" id="etco2Value">38</div>
@@ -93,13 +102,19 @@
                 
                 <!-- Bottom Parameter Boxes -->
                 <div class="parameter-boxes">
-                    <div class="param-box param-rr">
+                    <div class="param-box param-rr" id="rrBox">
+                        <button class="toggle-btn param-toggle" onclick="toggleDisplay('rrBox')" title="Hide/Show RR">
+                            <span id="rrToggleIcon">👁️</span>
+                        </button>
                         <div class="param-label">RR</div>
                         <div class="param-value" id="rrValue">--</div>
                         <div class="param-unit">breaths/min</div>
                     </div>
                     
-                    <div class="param-box param-nibp">
+                    <div class="param-box param-nibp" id="nibpBox">
+                        <button class="toggle-btn param-toggle" onclick="toggleDisplay('nibpBox')" title="Hide/Show NIBP">
+                            <span id="nibpToggleIcon">👁️</span>
+                        </button>
                         <div class="param-label">NIBP</div>
                         <div class="param-value" id="bpValue">--/--</div>
                         <div class="param-unit">mmHg</div>
